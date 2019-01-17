@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import { first, tap } from 'rxjs/operators';
 import { SettingsGQL, UpdateSettingsGQL } from './generated/graphql';
+import { Project } from '@angular-console/schema';
 
 export interface WorkspaceDescription {
   readonly path: string;
   readonly name: string;
   readonly favorite?: boolean;
+  readonly pinnedProjectNames?: string[];
 }
 
 interface SettingsData {
@@ -15,6 +17,12 @@ interface SettingsData {
   readonly enableDetailedStatus: boolean;
   readonly isConnectUser: boolean;
   readonly channel: 'latest' | 'beta' | 'alpha';
+}
+
+export function toggleItemInArray<T>(array: T[], item: T): T[] {
+  return array.includes(item)
+    ? array.filter(value => value !== item)
+    : [...array, item];
 }
 
 @Injectable({
@@ -47,10 +55,31 @@ export class Settings {
     }
   }
 
+  getWorkspace(path: string): WorkspaceDescription | undefined {
+    return (this.settings.recent || []).find(w => w.path === path);
+  }
+
   toggleFavorite(w: WorkspaceDescription): void {
     const r = this.getRecentWorkspaces().filter(rr => rr.path !== w.path);
     const favorite: WorkspaceDescription = { ...w, favorite: !w.favorite };
     this.store({ ...this.settings, recent: [...r, favorite] });
+  }
+
+  toggleProjectPin(path: string, project: Project): void {
+    const workspace = this.getWorkspace(path);
+    if (!workspace) {
+      console.warn('No workspace found at path: ', path);
+      return;
+    }
+    const r = this.getRecentWorkspaces().filter(rr => rr.path !== path);
+    const modifiedWorkspace: WorkspaceDescription = {
+      ...workspace,
+      pinnedProjectNames: toggleItemInArray(
+        workspace.pinnedProjectNames || [],
+        project.name
+      )
+    };
+    this.store({ ...this.settings, recent: [...r, modifiedWorkspace] });
   }
 
   addRecent(w: WorkspaceDescription): void {
