@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Project } from '@angular-console/schema';
-import { combineLatest, Observable, of } from 'rxjs';
-import { map, startWith, switchMap, shareReplay, tap } from 'rxjs/operators';
+import { combineLatest, Observable, of, Subject, BehaviorSubject } from 'rxjs';
+import { map, startWith, switchMap, shareReplay, tap, withLatestFrom } from 'rxjs/operators';
 import {
   PROJECTS_POLLING,
   Settings,
@@ -27,7 +27,7 @@ import {
 })
 export class ProjectsComponent implements OnInit {
   workspacePath: string;
-  pinnedProjectNames: string[];
+  pinnedProjectNames$: Subject<string[]> = new BehaviorSubject<string[]>([]);
   projects$: Observable<Project[]>;
   filteredProjects$: Observable<Project[]>;
   filteredPinnedProjects$: Observable<Project[]>;
@@ -78,8 +78,7 @@ export class ProjectsComponent implements OnInit {
         const workspaceSettings = this.settings.getWorkspace(
           this.workspacePath
         );
-        this.pinnedProjectNames =
-          (workspaceSettings && workspaceSettings.pinnedProjectNames) || [];
+        this.pinnedProjectNames$.next(workspaceSettings && workspaceSettings.pinnedProjectNames);
         const projects: Project[] = w.projects.map((p: Project) => {
           return {
             ...p,
@@ -106,16 +105,18 @@ export class ProjectsComponent implements OnInit {
     );
 
     this.filteredPinnedProjects$ = this.filteredProjects$.pipe(
-      map(projects =>
+      withLatestFrom(this.pinnedProjectNames$),
+      map(([projects, pinnedProjectNames]) =>
         projects.filter(project =>
-          this.pinnedProjectNames.includes(project.name)
+          pinnedProjectNames.includes(project.name)
         )
       )
     );
     this.filteredUnpinnedProjects$ = this.filteredProjects$.pipe(
-      map(projects =>
+      withLatestFrom(this.pinnedProjectNames$),
+      map(([projects, pinnedProjectNames]) =>
         projects.filter(
-          project => !this.pinnedProjectNames.includes(project.name)
+          project => !pinnedProjectNames.includes(project.name)
         )
       )
     );
@@ -131,11 +132,11 @@ export class ProjectsComponent implements OnInit {
     ] as any[];
   }
 
-  onPinClick(p: Project) {
-    this.pinnedProjectNames = toggleItemInArray(
-      this.pinnedProjectNames || [],
+  onPinClick(p: Project, pinnedProjectNames: string[]) {
+    this.pinnedProjectNames$.next(toggleItemInArray(
+      pinnedProjectNames || [],
       p.name
-    );
+    ));
     this.projectFilterFormControl.setValue(
       this.projectFilterFormControl.value || ''
     );
