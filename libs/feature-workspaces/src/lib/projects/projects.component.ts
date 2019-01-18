@@ -62,6 +62,10 @@ export class ProjectsComponent implements OnInit {
       map(m => m.path),
       tap(path => {
         this.workspacePath = path;
+        const workspaceSettings = this.settings.getWorkspace(
+          this.workspacePath
+        );
+        this.pinnedProjectNames$.next(workspaceSettings && workspaceSettings.pinnedProjectNames);
       }),
       switchMap(path => {
         return this.workspaceGQL.watch(
@@ -75,10 +79,6 @@ export class ProjectsComponent implements OnInit {
       }),
       map((r: any) => {
         const w = r.data.workspace;
-        const workspaceSettings = this.settings.getWorkspace(
-          this.workspacePath
-        );
-        this.pinnedProjectNames$.next(workspaceSettings && workspaceSettings.pinnedProjectNames);
         const projects: Project[] = w.projects.map((p: Project) => {
           return {
             ...p,

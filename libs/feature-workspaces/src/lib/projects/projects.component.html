@@ -17,7 +17,7 @@
     {{ projectFilterFormControl.value ? 'clear' : 'filter_list' }}
   </mat-icon>
 </div>
-<mat-list *ngIf="pinnedProjectNames$ | async as pinnedProjectNames">
+<mat-list>
   <cdk-virtual-scroll-viewport
     [style.height]="viewportHeight$ | async"
     itemSize="88px"
@@ -29,7 +29,7 @@
       <h3 *ngIf="projects.length > 0" mat-subheader>Pinned Projects</h3>
       <ng-container *ngFor="let p of projects">
         <mat-list-item [ngClass]="p.projectType" [disableRipple]="true">
-          <mat-icon
+          <mat-icon *ngIf="pinnedProjectNames$ | async as pinnedProjectNames"
             (click)="onPinClick(p, pinnedProjectNames); $event.stopPropagation()"
             mat-list-icon
             class="favorite-icon favorited"
@@ -64,7 +64,7 @@
       <h3 mat-subheader>Projects</h3>
       <ng-container *cdkVirtualFor="let p of projects">
         <mat-list-item [ngClass]="p.projectType" [disableRipple]="true">
-          <mat-icon
+          <mat-icon *ngIf="pinnedProjectNames$ | async as pinnedProjectNames"
             (click)="onPinClick(p, pinnedProjectNames); $event.stopPropagation()"
             mat-list-icon
             class="favorite-icon"
