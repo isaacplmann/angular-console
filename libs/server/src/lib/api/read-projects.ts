@@ -1,15 +1,21 @@
 import { normalizeSchema, readJsonFile } from '../utils/utils';
 import { Project, Architect } from '../generated/graphql-types';
 import * as path from 'path';
+import { Store } from '@nrwl/angular-console-enterprise-electron';
 
-export function readProjects(basedir: string, json: any): Project[] {
+export function readProjects(
+  basedir: string,
+  json: any,
+  store: Store
+): Project[] {
   return Object.entries(json)
     .map(([key, value]: [string, any]) => {
       return {
         name: key,
         root: value.root,
         projectType: value.projectType,
-        architect: readArchitect(key, basedir, value.architect)
+        architect: readArchitect(key, basedir, value.architect),
+        recentActions: readRecentActions(value.root, store)
       };
     })
     .sort(compareProjects);
@@ -70,4 +76,20 @@ function readBuildersFile(basedir: string, npmPackage: string): any {
   });
 
   return builders;
+}
+
+export function getRecentActionsKey(projectPath: string): string {
+  return `recentActions:${projectPath}`;
+}
+
+export function readRecentActions(projectPath: string, store: Store): any[] {
+  return store.get(getRecentActionsKey(projectPath)) || [];
+}
+
+export function storeRecentActions(
+  store: Store,
+  projectPath: string,
+  value: any
+) {
+  store.set(getRecentActionsKey(projectPath), value);
 }

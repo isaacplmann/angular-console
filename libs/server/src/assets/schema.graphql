@@ -182,6 +182,12 @@ type Project {
   root: String!
   projectType: String!
   architect(name: String): [Architect]
+  recentActions: [ProjectAction!]
+}
+
+type ProjectAction {
+  actionDescription: String!;
+  link: [String! | { project: String!}!]
 }
 
 type Schematic {
