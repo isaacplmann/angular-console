@@ -130,6 +130,7 @@ export class MutationResolver {
 
   @Mutation()
   async runNg(@Args('path') p: string, @Args('runCommand') rc: string[]) {
+    console.log(p, rc);
     try {
       return runCommand(
         'ng',
